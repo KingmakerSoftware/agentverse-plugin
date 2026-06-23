@@ -1,0 +1,128 @@
+[
+    {
+        "Family":  "KB3D_CSK_BldgSmNomadsHouse",
+        "Size":  "Sm",
+        "Ratio":  0.2,
+        "GeoBinMB":  1.18
+    },
+    {
+        "Family":  "KB3D_CSK_BldgSmGasStation",
+        "Size":  "Sm",
+        "Ratio":  0.2,
+        "GeoBinMB":  1.38
+    },
+    {
+        "Family":  "KB3D_CSK_BldgSmGovernorsShip",
+        "Size":  "Sm",
+        "Ratio":  0.2,
+        "GeoBinMB":  1.23
+    },
+    {
+        "Family":  "KB3D_CSK_BldgSmSmallFactory",
+        "Size":  "Sm",
+        "Ratio":  0.2,
+        "GeoBinMB":  1.77
+    },
+    {
+        "Family":  "KB3D_CSK_BldgSmFishingVillage",
+        "Size":  "Sm",
+        "Ratio":  0.2,
+        "GeoBinMB":  2.54
+    },
+    {
+        "Family":  "KB3D_CSK_BldgSmWeatherStation",
+        "Size":  "Sm",
+        "Ratio":  0.2,
+        "GeoBinMB":  2.12
+    },
+    {
+        "Family":  "KB3D_CSK_BldgSmBrewery",
+        "Size":  "Sm",
+        "Ratio":  0.2,
+        "GeoBinMB":  4
+    },
+    {
+        "Family":  "KB3D_CSK_BldgSmPostOffice",
+        "Size":  "Sm",
+        "Ratio":  0.2,
+        "GeoBinMB":  1.66
+    },
+    {
+        "Family":  "KB3D_CSK_BldgMdResClusterA",
+        "Size":  "Md",
+        "Ratio":  0.25,
+        "GeoBinMB":  3.63
+    },
+    {
+        "Family":  "KB3D_CSK_BldgMdRepairStation",
+        "Size":  "Md",
+        "Ratio":  0.25,
+        "GeoBinMB":  4.38
+    },
+    {
+        "Family":  "KB3D_CSK_BldgMdObservatory",
+        "Size":  "Md",
+        "Ratio":  0.25,
+        "GeoBinMB":  3.54
+    },
+    {
+        "Family":  "KB3D_CSK_BldgMdResClusterB",
+        "Size":  "Md",
+        "Ratio":  0.25,
+        "GeoBinMB":  3.73
+    },
+    {
+        "Family":  "KB3D_CSK_BldgMdFlyingFarm",
+        "Size":  "Md",
+        "Ratio":  0.25,
+        "GeoBinMB":  2.17
+    },
+    {
+        "Family":  "KB3D_CSK_BldgMdFloatingManor",
+        "Size":  "Md",
+        "Ratio":  0.25,
+        "GeoBinMB":  6.03
+    },
+    {
+        "Family":  "KB3D_CSK_BldgMdHotel",
+        "Size":  "Md",
+        "Ratio":  0.25,
+        "GeoBinMB":  2.49
+    },
+    {
+        "Family":  "KB3D_CSK_BldgMdEntranceArch",
+        "Size":  "Md",
+        "Ratio":  0.25,
+        "GeoBinMB":  2.86
+    },
+    {
+        "Family":  "KB3D_CSK_BldgLgResCluster",
+        "Size":  "Lg",
+        "Ratio":  0.15,
+        "GeoBinMB":  3.8
+    },
+    {
+        "Family":  "KB3D_CSK_BldgLgShipYard",
+        "Size":  "Lg",
+        "Ratio":  0.15,
+        "GeoBinMB":  3.32
+    },
+    {
+        "Family":  "KB3D_CSK_BldgLgAirFactory",
+        "Size":  "Lg",
+        "Ratio":  0.15,
+        "GeoBinMB":  2.21
+    },
+    {
+        "Family":  "KB3D_CSK_BldgLgAirPort",
+        "Size":  "Lg",
+        "Ratio":  0.15,
+        "GeoBinMB":  21.49
+    },
+    {
+        "Family":  "_misc",
+        "Size":  "Md",
+        "Ratio":  0.25,
+        "GeoBinMB":  1.83
+    }
+]

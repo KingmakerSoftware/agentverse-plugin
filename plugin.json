@@ -1,0 +1,40 @@
+{
+  "author": "ClawMagic",
+  "capabilities": { "domains": [], "tools": [] },
+  "channels": [],
+  "configSchema": { "additionalProperties": false, "properties": {}, "type": "object" },
+  "createdAt": "2026-06-21T00:00:00.000Z",
+  "description": "A live 3D steampunk sky-city where each agent inhabits its own Nomad's House, flying between landmark buildings as it works, waits, researches, and idles.",
+  "entry": { "server": "plugin/index.js", "web": "web/index.js" },
+  "id": "agentverse",
+  "integratedException": false,
+  "name": "Agentverse",
+  "permissions": {
+    "filesystem": { "read": [], "write": [] },
+    "network": { "allow": [] },
+    "shell": { "allow": [] },
+    "storage": []
+  },
+  "pricing": { "tier": "free" },
+  "requiresApprovalToCreate": true,
+  "requiresApprovalToRun": false,
+  "secrets": [],
+  "type": "adapter-openclaw",
+  "ui": {
+    "appSurface": "web",
+    "category": "Monitoring",
+    "icon": "🌐",
+    "nav": [
+      {
+        "id": "agentverse-world",
+        "label": "Agentverse",
+        "route": "/app/plugins/agentverse/app"
+      }
+    ],
+    "primaryRoute": "/app/plugins/agentverse/app",
+    "tags": ["monitoring", "agents", "live", "visual"]
+  },
+  "uiHints": {},
+  "updatedAt": "2026-06-21T00:00:00.000Z",
+  "version": "0.2.0"
+}

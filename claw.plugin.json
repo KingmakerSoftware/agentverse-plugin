@@ -1,0 +1,59 @@
+{
+  "id": "agentverse",
+  "name": "Agentverse",
+  "description": "A live 3D steampunk sky-city where each agent inhabits its own Nomad's House, flying between landmark buildings as it works, waits, researches, and idles.",
+  "version": "0.2.0",
+  "type": "UTILITY",
+  "platform": null,
+  "tasks": [],
+  "entry": {
+    "kind": "node_module",
+    "path": "plugin/index.js",
+    "web": "web/index.js"
+  },
+  "permissions": {
+    "network": [],
+    "secrets": [],
+    "storage": []
+  },
+  "install": {
+    "installPathHint": "plugins/agentverse",
+    "postInstall": ["registerPlugin"]
+  },
+  "support": {
+    "email": "support@clawmagic.dev"
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {}
+  },
+  "uiHints": {},
+  "ui": {
+    "icon": "🌐",
+    "appSurface": "web",
+    "primaryRoute": "/app/plugins/agentverse/app",
+    "category": "Monitoring",
+    "nav": [
+      {
+        "id": "agentverse-world",
+        "label": "Agentverse",
+        "route": "/app/plugins/agentverse/app"
+      }
+    ],
+    "tags": ["monitoring", "agents", "live", "visual", "3d"],
+    "hostApi": {
+      "routes": [
+        { "path": "/api/runtime/status", "methods": ["GET"] },
+        { "path": "/api/agents", "methods": ["GET"] }
+      ]
+    }
+  },
+  "lookbook": {
+    "patterns": [
+      "Each agent owns a Nomad's House that flies between landmark buildings — AirPort, Observatory, PostOffice and more — based on what it's doing.",
+      "Idle agents fish at the Fishing Village; active agents work at the Air Factory; agents awaiting approval wait at the Floating Manor."
+    ],
+    "flows": []
+  }
+}
