@@ -59,6 +59,12 @@ const AGENT_COLORS = [
 
 const FLIGHT_SPEED = 70;
 
+const HOUSE_BASE_SPEED = 22;  // units/s for nomad house travel
+const HOUSE_MIN_FLIGHT = 5;   // s minimum flight time
+const HOUSE_MAX_FLIGHT = 15;  // s maximum flight time
+const DOCK_SPREAD_MIN  = 15;  // min XZ distance from gather point for parking
+const DOCK_SPREAD_MAX  = 35;  // max XZ distance from gather point for parking
+
 // ── Loading screen ────────────────────────────────────────────────────────────
 
 const LOADER_CSS = `
@@ -120,10 +126,20 @@ interface AgentHouseRef {
   state: string; task: string;
   wanderTargetFam: string;
   wanderState: "flying" | "docked";
-  dockTimer: number; // seconds remaining at current building
+  dockTimer: number;
+  dockOffset: THREE.Vector3;     // XZ parking offset from the building's gather point
+  flightStartPos: THREE.Vector3; // world position when this flight began
+  flightProgress: number;        // 0 → 1 through the flight arc
+  flightDuration: number;        // total time for this flight (seconds)
+  facingAngle: number;           // current Y-rotation (radians)
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+function smootherstep(t: number): number {
+  const c = Math.max(0, Math.min(1, t));
+  return c * c * c * (c * (c * 6 - 15) + 10);
+}
 
 function makeNameTag(name: string, hexColor: number): THREE.Sprite {
   const W = 256, H = 52;
@@ -599,33 +615,66 @@ export default function Agentverse({ api }: PluginAppProps) {
         p.node.matrixWorldNeedsUpdate = true;
       }
 
-      // NomadsHouse wander — dock 10 s then fly to a random new building, repeat
-      const lerpT   = 1.0 - Math.pow(0.06, dt); // slow, graceful travel speed
-      const tmpVec  = new THREE.Vector3();
+      // NomadsHouse wander — ease-in/out arc, each house parks at its own offset
+      const tmpVec = new THREE.Vector3();
       for (const house of agentHousesRef.current.values()) {
         const liveGP = gatherPointsRef.current.get(house.wanderTargetFam);
 
+        // Live target: gather point + this house's parking offset (Y tracks float)
+        if (liveGP) {
+          house.targetPos.set(
+            liveGP.x + house.dockOffset.x,
+            liveGP.y,
+            liveGP.z + house.dockOffset.z,
+          );
+        }
+
         if (house.wanderState === "docked") {
           house.dockTimer -= dt;
-          // Bob gently with the docked building
-          if (liveGP) house.targetPos.copy(liveGP);
+          house.currentPos.copy(house.targetPos); // stay locked to bobbing building
           if (house.dockTimer <= 0) {
-            // Choose a different building at random
             const others = LANDMARK_FAMILIES.filter(f => f !== house.wanderTargetFam);
             house.wanderTargetFam = others[Math.floor(Math.random() * others.length)];
+            // Random parking spot at the new building
+            const ang  = Math.random() * Math.PI * 2;
+            const spr  = DOCK_SPREAD_MIN + Math.random() * (DOCK_SPREAD_MAX - DOCK_SPREAD_MIN);
+            house.dockOffset.set(Math.sin(ang) * spr, 0, Math.cos(ang) * spr);
+            house.flightStartPos.copy(house.currentPos);
+            const newGP   = gatherPointsRef.current.get(house.wanderTargetFam);
+            const estDist = newGP
+              ? house.flightStartPos.distanceTo(
+                  tmpVec.set(newGP.x + house.dockOffset.x, newGP.y, newGP.z + house.dockOffset.z)
+                )
+              : 200;
+            house.flightDuration = Math.max(HOUSE_MIN_FLIGHT, Math.min(HOUSE_MAX_FLIGHT, estDist / HOUSE_BASE_SPEED));
+            house.flightProgress = 0;
             house.wanderState = "flying";
           }
         } else {
-          // Flying — track live position of destination (it's bobbing)
-          if (liveGP) house.targetPos.copy(liveGP);
-          // Dock when close enough
-          if (house.currentPos.distanceTo(house.targetPos) < 14) {
+          // Flying — advance progress, apply smootherstep for ease-in/out feel
+          house.flightProgress = Math.min(1, house.flightProgress + dt / house.flightDuration);
+          const eased = smootherstep(house.flightProgress);
+          house.currentPos.lerpVectors(house.flightStartPos, house.targetPos, eased);
+
+          // Smoothly rotate to face direction of travel (Y axis only)
+          const dx = house.targetPos.x - house.flightStartPos.x;
+          const dz = house.targetPos.z - house.flightStartPos.z;
+          if (Math.abs(dx) > 0.5 || Math.abs(dz) > 0.5) {
+            const heading = Math.atan2(dx, dz);
+            let diff = heading - house.facingAngle;
+            while (diff >  Math.PI) diff -= Math.PI * 2;
+            while (diff < -Math.PI) diff += Math.PI * 2;
+            house.facingAngle += diff * (1 - Math.pow(0.05, dt));
+            house.root.rotation.y = house.facingAngle;
+          }
+
+          if (house.flightProgress >= 1) {
+            house.currentPos.copy(house.targetPos);
             house.wanderState = "docked";
-            house.dockTimer = 10;
+            house.dockTimer = 8 + Math.random() * 4;
           }
         }
 
-        house.currentPos.lerp(house.targetPos, lerpT);
         house.root.position.copy(house.currentPos);
         tmpVec.copy(house.currentPos).add(lightOffset); house.light.position.copy(tmpVec);
         tmpVec.copy(house.currentPos).add(labelOffset); house.label.position.copy(tmpVec);
@@ -696,9 +745,15 @@ export default function Agentverse({ api }: PluginAppProps) {
         const label = makeNameTag(agent.name, hexColor);
         scene.add(label);
 
-        // Pick a random starting building, stagger dock timers so agents spread out
-        const startFam = LANDMARK_FAMILIES[idx % LANDMARK_FAMILIES.length];
-        const startPos = gatherPointsRef.current.get(startFam)?.clone() ?? new THREE.Vector3(0, 0, 0);
+        // Pick a random starting building with a unique parking offset
+        const startFam  = LANDMARK_FAMILIES[idx % LANDMARK_FAMILIES.length];
+        const startAng  = Math.random() * Math.PI * 2;
+        const startSpr  = DOCK_SPREAD_MIN + Math.random() * (DOCK_SPREAD_MAX - DOCK_SPREAD_MIN);
+        const dockOffset = new THREE.Vector3(Math.sin(startAng) * startSpr, 0, Math.cos(startAng) * startSpr);
+        const startGP   = gatherPointsRef.current.get(startFam);
+        const startPos  = startGP
+          ? new THREE.Vector3(startGP.x + dockOffset.x, startGP.y, startGP.z + dockOffset.z)
+          : new THREE.Vector3(0, 0, 0);
         root.position.copy(startPos);
         light.position.copy(startPos).add(lightOffset);
         label.position.copy(startPos).add(labelOffset);
@@ -709,7 +764,12 @@ export default function Agentverse({ api }: PluginAppProps) {
           state: rawState, task: task?.summary ?? "",
           wanderTargetFam: startFam,
           wanderState: "docked",
-          dockTimer: idx * 3.5, // stagger: agent 0 leaves at 0s, agent 1 at 3.5s, etc.
+          dockTimer: idx * 3.5,
+          dockOffset,
+          flightStartPos: startPos.clone(),
+          flightProgress: 0,
+          flightDuration: 1,
+          facingAngle: Math.random() * Math.PI * 2,
         });
       }
 
