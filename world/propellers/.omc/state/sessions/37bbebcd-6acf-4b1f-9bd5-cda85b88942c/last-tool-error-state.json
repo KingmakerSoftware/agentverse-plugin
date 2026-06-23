@@ -1,7 +1,0 @@
-{
-  "tool_name": "PowerShell",
-  "tool_input_preview": "{\"command\":\"$env:PYTHONUTF8 = \\\"1\\\"\\n$d = \\\"C:\\\\Users\\\\Drewness\\\\Downloads\\\\3d\\\\world\\\\_obj\\\"\\n\\\"=== Observatory Windmill ===\\\"\\npython \\\"C:\\\\Users\\\\Drewness\\\\Downloads\\\\3d\\\\analyze_prop.py\\\" \\\"Windmi...",
-  "error": "Exit code 255\n=== Observatory Windmill ===\r\n\r\nKB3D_CSK_BldgMdObservatory_A_WindmillB  (8146 verts)  pivot=[np.float64(-117.3), np.float64(34.7), np.float64(-48.4)]\r\n  world bbox XYZ = [np.float64(2.3), np.float64(3.9), np.float64(3.9)]\r\n  PCA-chosen axis (smallest var) = [np.float64(0.003), np.float64(0.468), np.float64(-0.884)]\r\nKB3D_CSK_BldgMdObservatory_A_WindmillC  (4449 verts)  pivot=[np.float64(-116.2), np.float64(29.3), np.float64(-48.4)]\r\n  world bbox XYZ = [np.float64(4.6), np.float64(1...",
-  "timestamp": "2026-06-22T02:12:49.267Z",
-  "retry_count": 1
-}
