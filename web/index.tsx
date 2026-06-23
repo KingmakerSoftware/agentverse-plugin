@@ -323,7 +323,7 @@ export default function Agentverse({ api }: PluginAppProps) {
     // so rotations and positions can be applied cleanly in a second pass.
 
     let loaded = 0;
-    const total = LANDMARK_FAMILIES.length + 1; // landmarks + nomads (propellers load lazily)
+    const total = LANDMARK_FAMILIES.length + 2; // landmarks + nomads + propellers
     const landmarkAnchors     = new Map<string, THREE.Group>();
     const landmarkSizes       = new Map<string, THREE.Vector3>();
     const buildingOrigCenters = new Map<string, THREE.Vector3>();
@@ -522,6 +522,49 @@ export default function Agentverse({ api }: PluginAppProps) {
       }
     }
 
+    // ── Propellers ──────────────────────────────────────────────────────────
+    // Load synchronously so world matrices are stable before the RAF loop.
+    // tP and preM are precomputed per rotor to halve per-frame matrix work.
+
+    try {
+      const manifest: Record<string, { pivot: number[]; axis: number[] }> =
+        await fetch(ASSET_BASE + "/propellers/manifest.json").then(r => r.json());
+      await new Promise<void>(res => {
+        loader.load(ASSET_BASE + "/propellers/model.gltf", gltf => {
+          world.add(gltf.scene); world.updateMatrixWorld(true);
+          gltf.scene.traverse(n => {
+            const e = manifest[n.name]; if (!e) return;
+            n.matrixAutoUpdate = false;
+            const fam = LANDMARK_FAMILIES.find(f => n.name.startsWith(f));
+            const mx  = fam ? buildingMxs.get(fam) : undefined;
+            const pivot = new THREE.Vector3().fromArray(e.pivot);
+            if (mx) pivot.applyMatrix4(mx);
+            const axis = new THREE.Vector3().fromArray(e.axis);
+            if (mx) axis.applyMatrix4(new THREE.Matrix4().extractRotation(mx));
+            axis.normalize();
+            const world0 = mx
+              ? new THREE.Matrix4().multiplyMatrices(mx, n.matrixWorld)
+              : n.matrixWorld.clone();
+            const parentInv = new THREE.Matrix4();
+            if (n.parent) parentInv.copy(n.parent.matrixWorld).invert();
+            const tP   = new THREE.Matrix4().makeTranslation(pivot.x, pivot.y, pivot.z);
+            const preM = new THREE.Matrix4().makeTranslation(-pivot.x, -pivot.y, -pivot.z).multiply(world0);
+            const fast3 = ["Observatory", "SmallFactory", "FlyingFarm"].some(s => n.name.includes(s));
+            const isWind = /Windmill|WindTurbine|Turbine|EnergyWheel|Fan|Rotor|Sail/.test(n.name);
+            const vary = (n.name.length % 5) / 5;
+            const floatIdx = buildingFloatsRef.current.findIndex(bf => bf.fam === fam);
+            spinPropsRef.current.push({
+              node: n, pivot, axis, world0, parentInv, tP, preM,
+              phase: (n.name.length % 13) / 13 * Math.PI * 2,
+              speed: fast3 ? 3.6 + vary * 1.6 : isWind ? 2.0 + vary * 1.2 : 0.25 + vary * 0.45,
+              floatIdx: floatIdx ?? -1,
+            });
+          });
+          res();
+        }, undefined, () => res());
+      });
+    } catch { /* propellers optional */ }
+
     renderer.shadowMap.needsUpdate = true;
     setLoadProgress(100);
     setStatusText("Realm at rest");
@@ -634,51 +677,6 @@ export default function Agentverse({ api }: PluginAppProps) {
       renderer.render(scene, camera);
     }
     loop();
-
-    // ── Lazy-load propellers (scene already rendering) ───────────────────────
-    // Precompute T(+pivot) and T(-pivot)×world0 per rotor so the RAF loop
-    // only needs 2 matrix multiplies per frame instead of 4.
-    ;(async () => {
-      try {
-        const manifest: Record<string, { pivot: number[]; axis: number[] }> =
-          await fetch(ASSET_BASE + "/propellers/manifest.json").then(r => r.json());
-        await new Promise<void>(res => {
-          loader.load(ASSET_BASE + "/propellers/model.gltf", gltf => {
-            world.add(gltf.scene); world.updateMatrixWorld(true);
-            gltf.scene.traverse(n => {
-              const e = manifest[n.name]; if (!e) return;
-              n.matrixAutoUpdate = false;
-              const fam = LANDMARK_FAMILIES.find(f => n.name.startsWith(f));
-              const mx  = fam ? buildingMxs.get(fam) : undefined;
-              const pivot = new THREE.Vector3().fromArray(e.pivot);
-              if (mx) pivot.applyMatrix4(mx);
-              const axis = new THREE.Vector3().fromArray(e.axis);
-              if (mx) axis.applyMatrix4(new THREE.Matrix4().extractRotation(mx));
-              axis.normalize();
-              const world0 = mx
-                ? new THREE.Matrix4().multiplyMatrices(mx, n.matrixWorld)
-                : n.matrixWorld.clone();
-              const parentInv = new THREE.Matrix4();
-              if (n.parent) parentInv.copy(n.parent.matrixWorld).invert();
-              const tP   = new THREE.Matrix4().makeTranslation(pivot.x, pivot.y, pivot.z);
-              const preM = new THREE.Matrix4().makeTranslation(-pivot.x, -pivot.y, -pivot.z).multiply(world0);
-              const fast3 = ["Observatory", "SmallFactory", "FlyingFarm"].some(s => n.name.includes(s));
-              const isWind = /Windmill|WindTurbine|Turbine|EnergyWheel|Fan|Rotor|Sail/.test(n.name);
-              const vary = (n.name.length % 5) / 5;
-              const floatIdx = buildingFloatsRef.current.findIndex(bf => bf.fam === fam);
-              spinPropsRef.current.push({
-                node: n, pivot, axis, world0, parentInv, tP, preM,
-                phase: (n.name.length % 13) / 13 * Math.PI * 2,
-                speed: fast3 ? 3.6 + vary * 1.6 : isWind ? 2.0 + vary * 1.2 : 0.25 + vary * 0.45,
-                floatIdx: floatIdx ?? -1,
-              });
-            });
-            renderer.shadowMap.needsUpdate = true;
-            res();
-          }, undefined, () => res());
-        });
-      } catch { /* propellers optional */ }
-    })();
   }, []);
 
   // ── Scene lifecycle ───────────────────────────────────────────────────────
